@@ -1,1 +1,147 @@
-k
+local function createGUI()
+    if game.Players.LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("ScreenGui") then
+        return
+    end
+
+    local ScreenGui = Instance.new("ScreenGui")
+    local outlineFrame = Instance.new("Frame")
+    local button = Instance.new("TextButton")
+
+    ScreenGui.Name = "ScreenGui"
+    ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+    ScreenGui.ResetOnSpawn = false
+
+    outlineFrame.Name = "OutlineFrame"
+    outlineFrame.Parent = ScreenGui
+    outlineFrame.Position = UDim2.new(0, 10, 0, 10)
+    outlineFrame.Size = UDim2.new(0, 140, 0, 70)
+    outlineFrame.BackgroundTransparency = 1
+    outlineFrame.BorderSizePixel = 3
+    outlineFrame.BorderColor3 = Color3.fromRGB(255, 165, 0)
+
+    button.Name = "Macro"
+    button.Parent = outlineFrame
+    button.Size = UDim2.new(0, 120, 0, 60)
+    button.Position = UDim2.new(0, 10, 0, 5)
+    button.Text = "Macro"
+    button.BackgroundColor3 = Color3.fromRGB(44, 62, 80)
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.Font = Enum.Font.Gotham
+    button.TextSize = 26
+    button.TextStrokeTransparency = 0.8
+    button.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+
+    local buttonGradient = Instance.new("UIGradient")
+    buttonGradient.Parent = button
+    buttonGradient.Color = ColorSequence.new(
+        Color3.fromRGB(44, 62, 80),
+        Color3.fromRGB(52, 152, 219)
+    )
+    buttonGradient.Rotation = 45
+
+    local buttonCorner = Instance.new("UICorner")
+    buttonCorner.CornerRadius = UDim.new(0, 16)
+    buttonCorner.Parent = button
+
+    button.MouseEnter:Connect(function()
+        button.BackgroundColor3 = Color3.fromRGB(52, 152, 219)
+        button.TextColor3 = Color3.fromRGB(0, 0, 0)
+        buttonGradient.Color = ColorSequence.new(
+            Color3.fromRGB(52, 152, 219),
+            Color3.fromRGB(44, 62, 80)
+        )
+    end)
+
+    button.MouseLeave:Connect(function()
+        button.BackgroundColor3 = Color3.fromRGB(44, 62, 80)
+        button.TextColor3 = Color3.fromRGB(255, 255, 255)
+        buttonGradient.Color = ColorSequence.new(
+            Color3.fromRGB(44, 62, 80),
+            Color3.fromRGB(52, 152, 219)
+        )
+    end)
+
+    button.MouseButton1Click:Connect(function()
+        button.BackgroundColor3 = Color3.fromRGB(52, 152, 219)
+        wait(0.1)
+        button.BackgroundColor3 = Color3.fromRGB(44, 62, 80)
+    end)
+
+    local RunService = game:GetService("RunService")
+    local player = game.Players.LocalPlayer
+    local camera = game.Workspace.CurrentCamera
+    local isFacingForward = false
+
+    local function faceForward()
+        local character = player.Character or player.CharacterAdded:Wait()
+        local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+        local currentPosition = humanoidRootPart.Position
+
+        local lookVector = camera.CFrame.LookVector
+        local flatLookVector = Vector3.new(lookVector.X, 0, lookVector.Z).Unit
+
+        local newCFrame = CFrame.new(currentPosition, currentPosition + flatLookVector)
+        humanoidRootPart.CFrame = newCFrame
+    end
+
+    local function loopFaceForward()
+        local connection
+        connection = RunService.RenderStepped:Connect(function()
+            if isFacingForward then
+                faceForward()
+            else
+                connection:Disconnect()
+            end
+        end)
+    end
+
+    button.MouseButton1Click:Connect(function()
+        isFacingForward = not isFacingForward
+        if isFacingForward then
+            button.Text = "Macro"
+            loopFaceForward()
+        else
+            button.Text = "Macro"
+        end
+    end)
+
+    local dragging, dragInput, mousePos, framePos
+
+    button.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            mousePos = input.Position
+            framePos = outlineFrame.Position
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+
+    button.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+
+    button.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - mousePos
+            outlineFrame.Position = UDim2.new(
+                framePos.X.Scale,
+                framePos.X.Offset + delta.X,
+                framePos.Y.Scale,
+                framePos.Y.Offset + delta.Y
+            )
+        end
+    end)
+end
+
+createGUI()
+
+local player = game.Players.LocalPlayer
+player.CharacterAdded:Connect(function()
+end)
